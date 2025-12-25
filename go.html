@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>VIOX 任务执行器 (动态追加版)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #e9ecef;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            height: 95vh;
+            overflow: hidden;
+        }
+
+        /* 左侧面板 */
+        .left-panel {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            min-width: 480px;
+        }
+
+        /* 右侧面板 */
+        .right-panel {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 18px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 设置栏 */
+        .settings-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            background: #f1f3f5;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            align-items: center;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .setting-item input {
+            width: 50px;
+            padding: 4px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* 输入区域 */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 60px;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            resize: none;
+            box-sizing: border-box;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            cursor: pointer;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            flex: 1;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-gen {
+            background: #6c757d;
+        }
+
+        /* 灰色 - 重置 */
+        .btn-add {
+            background: #28a745;
+        }
+
+        /* 绿色 - 追加 */
+        .btn-stop {
+            background: #dc3545;
+            flex: 0.5;
+        }
+
+        /* 红色 - 停止 */
+
+        /* 任务列表 */
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            overflow-y: auto;
+            flex-grow: 1;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+
+        .task-item {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+            transition: background 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+        }
+
+        .task-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        /* 状态颜色条 */
+        .status-bar {
+            width: 4px;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .task-item.status-pending .status-bar {
+            background: #ccc;
+        }
+
+        .task-item.status-active .status-bar {
+            background: #3498db;
+        }
+
+        .task-item.status-done .status-bar {
+            background: #2ecc71;
+        }
+
+        /* 激活状态背景微调 */
+        .task-item.status-active {
+            background-color: #eaf2f8;
+        }
+
+        .task-item.status-done {
+            opacity: 0.7;
+        }
+
+        /* 排序/删除按钮 */
+        .sort-controls {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            display: none;
+            gap: 5px;
+        }
+
+        .task-item:hover .sort-controls {
+            display: flex;
+        }
+
+        .btn-icon {
+            background: #eee;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 10px;
+            border-radius: 3px;
+            color: #555;
+        }
+
+        .btn-icon:hover {
+            background: #e2e6ea;
+            color: #000;
+        }
+
+        .btn-del {
+            color: #dc3545;
+            border-color: #fadbd8;
+            background: #fdedec;
+        }
+
+        /* URL 显示 */
+        .url-display {
+            font-family: Consolas, Monaco, "Courier New", monospace;
+            color: #2980b9;
+            font-weight: bold;
+            font-size: 12px;
+            word-break: break-all;
+            margin-right: 80px;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #666;
+        }
+
+        /* 实体的开始按钮 */
+        .btn-start-here {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .btn-start-here:hover {
+            background: #0056b3;
+        }
+
+        /* 运行时隐藏已完成或正在运行的按钮，防止误点 */
+        .status-active .btn-start-here,
+        .status-done .btn-start-here {
+            display: none;
+        }
+
+        /* 手机外壳 */
+        .phone-mockup {
+            width: 375px;
+            height: 667px;
+            background: #111;
+            border-radius: 30px;
+            padding: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+            display: flex;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border: none;
+            border-radius: 18px;
+        }
+
+        .status-display {
+            margin-top: 15px;
+            padding: 10px;
+            background: #222;
+            color: #0f0;
+            font-family: monospace;
+            border-radius: 6px;
+            width: 350px;
+            text-align: center;
+            font-size: 12px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="left-panel">
+        <h2>任务列表 <span style="font-size:12px; color:#999; font-weight:normal">支持运行中追加</span></h2>
+
+        <div class="settings-bar">
+            <div class="setting-item">
+                <label>刷新次数:</label>
+                <input type="number" id="setRefresh" value="2" min="1">
+            </div>
+            <div class="setting-item">
+                <label>间隔时间(秒):</label>
+                <input type="number" id="setTime" value="60" min="5">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <textarea id="baseUrl" placeholder="在此粘贴网址... &#10;如: viox.com/cn/product-a (自动识别并去cn)"></textarea>
+            <div class="btn-row">
+                <button class="btn btn-gen" onclick="handleGenerate(false)">1. 生成新列表 (重置)</button>
+                <button class="btn btn-add" onclick="handleGenerate(true)">+ 追加到末尾</button>
+                <button class="btn btn-stop" onclick="stopProcess()">停止</button>
+            </div>
+        </div>
+
+        <ul class="task-list" id="taskList">
+            <li style="padding:20px; text-align:center; color:#999;">请在上方输入网址并生成...</li>
+        </ul>
+    </div>
+
+    <div class="right-panel">
+        <div class="phone-mockup">
+            <iframe id="workFrame" src="about:blank"></iframe>
+        </div>
+        <div class="status-display" id="globalStatus">系统待机</div>
+    </div>
+
+    <script>
+        const langConfigs = [
+            { code: 'es', name: '西班牙语' }, { code: 'ar', name: '阿拉伯语' },
+            { code: 'fr', name: '法语' }, { code: 'bn', name: '孟加拉语' },
+            { code: 'pt', name: '葡萄牙语' }, { code: 'ru', name: '俄语' },
+            { code: 'ur', name: '乌尔都语' }, { code: 'id', name: '印尼语' },
+            { code: 'de', name: '德语' }, { code: 'ja', name: '日语' },
+            { code: 'fa', name: '波斯语' }, { code: 'tr', name: '土耳其语' },
+            { code: 'vi', name: '越南语' }, { code: 'ko', name: '韩语' },
+            { code: 'tl', name: '菲律宾语' }, { code: 'it', name: '意大利语' },
+            { code: 'th', name: '泰语' }, { code: 'my', name: '缅甸语' },
+            { code: 'pl', name: '波兰语' }, { code: 'ms', name: '马来语' },
+            { code: 'km', name: '高棉语' }, { code: 'hu', name: '匈牙利语' },
+            { code: 'lo', name: '老挝语' }
+        ];
+
+        let taskQueue = [];
+        let isRunning = false;
+        let timerId = null;
+        let countdownTimer = null;
+        let currentIndex = 0; // 当前执行到的索引
+        let currentRefreshCount = 0;
+
+        window.addEventListener('beforeunload', function (e) {
+            if (isRunning) { e.preventDefault(); e.returnValue = '任务运行中...'; return '任务运行中...'; }
+        });
+
+        // --- 1. 网址处理核心逻辑 ---
+
+        function cleanUrlLanguage(inputUrl) {
+            let urlStr = inputUrl.trim();
+            if (!urlStr) return null;
+            if (!urlStr.startsWith('http')) urlStr = 'https://' + urlStr;
+
+            try {
+                const urlObj = new URL(urlStr);
+                const path = urlObj.pathname;
+
+                // 正则：匹配 /xx/ 开头 或者 /xx 结尾的 2位字母路径
+                // 例如：/cn/product -> /product, /es/product -> /product
+                // 解决 viox.com/cn/xxx 的问题
+                const cleanPath = path.replace(/^\/[a-zA-Z]{2}(\/|$)/, '/');
+
+                return { origin: urlObj.origin, path: cleanPath + urlObj.search };
+            } catch (e) {
+                console.error("URL Error:", e);
+                return null;
+            }
+        }
+
+        // --- 2. 生成/追加列表 ---
+
+        function handleGenerate(isAppend) {
+            const rawInput = document.getElementById('baseUrl').value;
+            if (!rawInput.trim()) { alert("请输入网址"); return; }
+
+            if (!isAppend) {
+                // 如果是重置，先停止当前任务
+                stopProcess();
+                taskQueue = [];
+                document.getElementById('taskList').innerHTML = '';
+                currentIndex = 0;
+            }
+
+            const lines = rawInput.split('\n');
+            let addedCount = 0;
+
+            // 记录追加前的长度，用于渲染新节点
+            const startIndex = taskQueue.length;
+
+            lines.forEach(line => {
+                const cleaned = cleanUrlLanguage(line);
+                if (!cleaned) return;
+
+                langConfigs.forEach(lang => {
+                    const fullUrl = `${cleaned.origin}/${lang.code}${cleaned.path}`;
+
+                    taskQueue.push({
+                        url: fullUrl,
+                        langName: lang.name,
+                        status: 'pending' // pending, active, done
+                    });
+                    addedCount++;
+                });
+            });
+
+            renderList(startIndex); // 只渲染新加的部分，提高性能
+            document.getElementById('baseUrl').value = ''; // 清空输入框方便下次粘贴
+
+            if (isAppend) {
+                document.getElementById('globalStatus').innerText = `已追加 ${addedCount} 个任务 (总计 ${taskQueue.length})`;
+            } else {
+                document.getElementById('globalStatus').innerText = `列表已生成 (总计 ${taskQueue.length})`;
+            }
+        }
+
+        function renderList(fromIndex = 0) {
+            const listEl = document.getElementById('taskList');
+            if (fromIndex === 0 && taskQueue.length === 0) {
+                listEl.innerHTML = '<li style="padding:20px; text-align:center; color:#999;">请生成列表...</li>';
+                return;
+            }
+            if (fromIndex === 0) listEl.innerHTML = '';
+
+            for (let i = fromIndex; i < taskQueue.length; i++) {
+                const task = taskQueue[i];
+                const li = document.createElement('li');
+                li.className = `task-item status-${task.status}`;
+                li.id = `task-${i}`;
+
+                li.innerHTML = `
+                    <div class="status-bar"></div>
+                    <div class="url-display">${task.url}</div>
+                    <div class="meta-row">
+                        <span>${i + 1}. ${task.langName}</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span id="info-${i}" style="font-weight:bold; color:#999; font-size:12px;">待命</span>
+                            <button class="btn-start-here" onclick="startFromIndex(${i})">从这开始 ▶</button>
+                        </div>
+                    </div>
+                    <div class="sort-controls">
+                        <button class="btn-icon btn-del" onclick="deleteItem(${i})">✕</button>
+                    </div>
+                `;
+                listEl.appendChild(li);
+            }
+        }
+
+        function deleteItem(index) {
+            // 为简单起见，只允许在非运行状态或删除排在后面的任务
+            // 如果删除正在运行的会比较复杂，这里做一个简单的限制
+            if (index === currentIndex && isRunning) {
+                alert("无法删除当前正在运行的任务");
+                return;
+            }
+            if (index < currentIndex) {
+                // 删除已完成的任务不影响索引，但视觉上需要移除
+                // 这里为了索引对齐简单，我们只标记隐藏，不真删数组，或者
+                // 建议：此处只做简单删除，实际生产建议重绘
+                if (confirm("确定删除？这会重置列表索引。")) {
+                    taskQueue.splice(index, 1);
+                    // 如果删除了当前索引前面的，当前索引要减1
+                    if (index < currentIndex) currentIndex--;
+                    renderList(0); // 重新完全渲染
+                }
+                return;
+            }
+
+            taskQueue.splice(index, 1);
+            renderList(0); // 重新渲染
+        }
+
+        // --- 3. 运行逻辑 ---
+
+        function startFromIndex(index) {
+            if (isRunning) {
+                if (!confirm("当前正在运行，确定要跳转到这个任务重新开始吗？")) return;
+                stopProcess(false); // 停止但不清空UI
+            }
+
+            isRunning = true;
+            currentIndex = index;
+            currentRefreshCount = 0;
+            processNextStep();
+        }
+
+        function processNextStep() {
+            if (!isRunning) return;
+
+            // 动态获取配置
+            const MAX_REFRESH = parseInt(document.getElementById('setRefresh').value) || 2;
+            const INTERVAL = parseInt(document.getElementById('setTime').value) || 60;
+
+            if (currentIndex >= taskQueue.length) {
+                document.getElementById('globalStatus').innerText = "🎉 所有任务完成 (等待新追加...)";
+                isRunning = false;
+                // 不完全停止，保持状态等待追加
+                alert("当前列表已跑完！你可以粘贴新链接追加任务。");
+                return;
+            }
+
+            const task = taskQueue[currentIndex];
+            const uiItem = document.getElementById(`task-${currentIndex}`);
+            const uiInfo = document.getElementById(`info-${currentIndex}`);
+            const iframe = document.getElementById('workFrame');
+
+            // 滚动定位
+            uiItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // 更新上一个任务状态（如果有）
+            if (currentIndex > 0) {
+                const prevIndex = currentIndex - 1;
+                // 简单的防越界检查
+                if (document.getElementById(`task-${prevIndex}`)) {
+                    document.getElementById(`task-${prevIndex}`).className = 'task-item status-done';
+                    document.getElementById(`info-${prevIndex}`).innerHTML = '<span style="color:#2ecc71">✔ 完成</span>';
+                }
+            }
+
+            // 更新当前状态
+            uiItem.className = 'task-item status-active';
+
+            currentRefreshCount++;
+
+            if (currentRefreshCount <= MAX_REFRESH) {
+                uiInfo.innerHTML = `<span style="color:#e67e22">刷新 ${currentRefreshCount}/${MAX_REFRESH}</span>`;
+
+                const separator = task.url.includes('?') ? '&' : '?';
+                iframe.src = `${task.url}${separator}t=${Date.now()}`;
+
+                let timeLeft = INTERVAL;
+                if (countdownTimer) clearInterval(countdownTimer);
+                updateStatusText(task.url, currentRefreshCount, MAX_REFRESH, timeLeft);
+
+                countdownTimer = setInterval(() => {
+                    if (!isRunning) return;
+                    timeLeft--;
+                    updateStatusText(task.url, currentRefreshCount, MAX_REFRESH, timeLeft);
+                    if (timeLeft <= 0) clearInterval(countdownTimer);
+                }, 1000);
+
+                timerId = setTimeout(() => {
+                    processNextStep();
+                }, INTERVAL * 1000);
+
+            } else {
+                // 完成当前项
+                uiItem.className = 'task-item status-done';
+                uiInfo.innerHTML = '<span style="color:#2ecc71">✔ 完成</span>';
+
+                currentIndex++;
+                currentRefreshCount = 0;
+                processNextStep();
+            }
+        }
+
+        function updateStatusText(url, count, max, time) {
+            let displayUrl = url.replace(/https?:\/\//, '');
+            if (displayUrl.length > 30) displayUrl = '...' + displayUrl.slice(-30);
+            document.getElementById('globalStatus').innerText =
+                `${displayUrl} | ${count}/${max}次 | 倒计时 ${time}s`;
+        }
+
+        function stopProcess(fullReset = true) {
+            isRunning = false;
+            if (timerId) clearTimeout(timerId);
+            if (countdownTimer) clearInterval(countdownTimer);
+            document.getElementById('globalStatus').innerText = "已停止";
+            if (fullReset) document.getElementById('workFrame').src = "about:blank";
+        }
+    </script>
+
+</body>
+
+</html>
