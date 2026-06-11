@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VIOX TP Warmup Runner</title>
+    <title>TranslatePress Warmup Runner</title>
     <style>
         :root {
             --bg: #eef2f6;
@@ -127,6 +127,35 @@
             box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.13);
         }
 
+        .preset-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .preset-btn {
+            flex: 1;
+            background: #fff;
+            color: var(--muted);
+            border: 1px solid var(--line);
+            padding: 8px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn.active {
+            background: var(--brand-2);
+            color: #fff;
+            border-color: var(--brand-2);
+        }
+
+        .preset-btn:hover:not(.active) {
+            background: #f1f5f9;
+        }
+
         .buttons {
             display: grid;
             grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -145,11 +174,11 @@
             transition: transform 0.12s, opacity 0.12s, filter 0.12s;
         }
 
-        button:hover {
+        button:not(.preset-btn):hover {
             filter: brightness(1.04);
         }
 
-        button:active {
+        button:not(.preset-btn):active {
             transform: translateY(1px);
         }
 
@@ -342,11 +371,17 @@
     <main class="app">
         <section class="panel left-panel">
             <div class="header">
-                <h1>VIOX TP Warmup Runner</h1>
-                <p class="sub">粘贴英文原文 URL，自动生成最终 25 个语言的 <code>?tp_warm=1</code> 队列。浏览器关闭会停止，但进度会保存在本机浏览器里。</p>
+                <h1 id="appTitle">TranslatePress Warmup Runner</h1>
+                <p class="sub">粘贴英文原文 URL，自动生成指定语言预设的 <code>?tp_warm=1</code> 队列。进度自动保存在本地。</p>
             </div>
 
             <div class="toolbar">
+                <label>目标语言预设</label>
+                <div class="preset-group">
+                    <button class="preset-btn active" id="btnViox">VIOX (25国)</button>
+                    <button class="preset-btn" id="btnKuangya">Kuangya (9国)</button>
+                </div>
+
                 <div class="settings-grid">
                     <div>
                         <label for="rounds">每个语言轮数</label>
@@ -357,17 +392,17 @@
                         <input id="waitSeconds" type="number" min="20" max="900" value="120">
                     </div>
                     <div>
-                        <label for="betweenLangSeconds">换语言缓冲秒数</label>
+                        <label for="betweenLangSeconds">换语言缓冲</label>
                         <input id="betweenLangSeconds" type="number" min="0" max="600" value="30">
                     </div>
                     <div>
-                        <label for="siteHost">固定域名，可留空</label>
-                        <input id="siteHost" type="text" placeholder="例如 https://viox.com">
+                        <label for="siteHost">强制域名(可空)</label>
+                        <input id="siteHost" type="text" placeholder="如 https://viox.com">
                     </div>
                 </div>
 
                 <label for="baseUrl">英文原文 URL，每行一个</label>
-                <textarea id="baseUrl" placeholder="例如：https://viox.com/fuse-to-breaker-retrofit-for-motor-control-panels-complete-engineering-guide-2026-3/"></textarea>
+                <textarea id="baseUrl" placeholder="例如：https://viox.com/some-post/"></textarea>
 
                 <div class="buttons">
                     <button class="btn-build" id="buildBtn">生成新队列</button>
@@ -378,7 +413,7 @@
                     <button class="btn-copy" id="copyBtn">复制 URLs</button>
                 </div>
 
-                <p class="notice">建议正式站只开一个页面跑，电脑不要睡眠。长文章可以保持 2 轮；如果发现内容没补齐，再对同一篇文章追加第 3 轮。</p>
+                <p class="notice">注意：切换预设只会影响新生成的队列，不会影响下方已经存在任务列表中的记录。</p>
             </div>
 
             <div class="stats">
@@ -400,7 +435,7 @@
     </main>
 
     <script>
-        const LANGUAGES = [
+        const VIOX_LANGUAGES = [
             { code: 'es_ES', slug: 'es', name: '西班牙语' },
             { code: 'pt_PT', slug: 'pt', name: '葡萄牙语' },
             { code: 'fr_FR', slug: 'fr', name: '法语' },
@@ -428,9 +463,26 @@
             { code: 'bn_BD', slug: 'bn', name: '孟加拉语' }
         ];
 
-        const STORAGE_KEY = 'vioxTpWarmupRunner:v2';
-        const ALL_SLUGS = ['en', 'cn', ...LANGUAGES.map(item => item.slug)];
+        const KUANGYA_LANGUAGES = [
+            { code: 'fr_FR', slug: 'fr', name: '法语' },
+            { code: 'pt_BR', slug: 'pt', name: '葡萄牙语(巴西)' },
+            { code: 'es_ES', slug: 'es', name: '西班牙语' },
+            { code: 'de_DE', slug: 'de', name: '德语' },
+            { code: 'it_IT', slug: 'it', name: '意大利语' },
+            { code: 'ko_KR', slug: 'ko', name: '韩语' },
+            { code: 'ja', slug: 'ja', name: '日语' },
+            { code: 'ru_RU', slug: 'ru', name: '俄语' },
+            { code: 'ar', slug: 'ar', name: '阿拉伯语' }
+        ];
 
+        const STORAGE_KEY = 'vioxTpWarmupRunner:v4';
+        
+        // 动态合并所有可能的 slug 用于路径清理验证
+        const ALL_SLUGS = ['cn', 'en', ...new Set([...VIOX_LANGUAGES, ...KUANGYA_LANGUAGES].map(item => item.slug))];
+
+        let currentPreset = 'viox';
+        let currentLanguages = VIOX_LANGUAGES;
+        
         let taskQueue = [];
         let currentIndex = 0;
         let isRunning = false;
@@ -438,6 +490,9 @@
         let countdownId = null;
 
         const els = {
+            appTitle: document.getElementById('appTitle'),
+            btnViox: document.getElementById('btnViox'),
+            btnKuangya: document.getElementById('btnKuangya'),
             rounds: document.getElementById('rounds'),
             waitSeconds: document.getElementById('waitSeconds'),
             betweenLangSeconds: document.getElementById('betweenLangSeconds'),
@@ -457,6 +512,26 @@
             statIndex: document.getElementById('statIndex'),
             statEta: document.getElementById('statEta')
         };
+
+        // 预设切换逻辑
+        function setPreset(presetName) {
+            currentPreset = presetName;
+            if (presetName === 'viox') {
+                currentLanguages = VIOX_LANGUAGES;
+                els.btnViox.classList.add('active');
+                els.btnKuangya.classList.remove('active');
+                els.appTitle.textContent = 'VIOX TP Warmup Runner';
+            } else {
+                currentLanguages = KUANGYA_LANGUAGES;
+                els.btnKuangya.classList.add('active');
+                els.btnViox.classList.remove('active');
+                els.appTitle.textContent = 'Kuangya TP Warmup Runner';
+            }
+            saveState();
+        }
+
+        els.btnViox.addEventListener('click', () => setPreset('viox'));
+        els.btnKuangya.addEventListener('click', () => setPreset('kuangya'));
 
         window.addEventListener('beforeunload', event => {
             if (!isRunning) return;
@@ -509,7 +584,7 @@
                 const cleaned = normalizeSourceUrl(line);
                 if (!cleaned) continue;
 
-                for (const lang of LANGUAGES) {
+                for (const lang of currentLanguages) {
                     for (let round = 1; round <= settings.rounds; round++) {
                         newTasks.push(makeTask(cleaned, lang, round, settings.rounds));
                     }
@@ -799,6 +874,7 @@
             const state = {
                 taskQueue,
                 currentIndex,
+                currentPreset,
                 settings: {
                     rounds: els.rounds.value,
                     waitSeconds: els.waitSeconds.value,
@@ -814,14 +890,22 @@
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (!raw) return;
                 const state = JSON.parse(raw);
+                
+                // 恢复预设配置
+                if (state.currentPreset) {
+                    setPreset(state.currentPreset);
+                }
+
                 taskQueue = Array.isArray(state.taskQueue) ? state.taskQueue : [];
                 currentIndex = Number.isInteger(state.currentIndex) ? state.currentIndex : 0;
+                
                 if (state.settings) {
                     els.rounds.value = state.settings.rounds || '2';
                     els.waitSeconds.value = state.settings.waitSeconds || '120';
                     els.betweenLangSeconds.value = state.settings.betweenLangSeconds || '30';
                     els.siteHost.value = state.settings.siteHost || '';
                 }
+                
                 if (taskQueue.length) {
                     setStatus(`已恢复上次队列。当前位置 ${Math.min(currentIndex + 1, taskQueue.length)} / ${taskQueue.length}。`);
                 }
