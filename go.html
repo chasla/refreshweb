@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TranslatePress Warmup Runner</title>
+
     <style>
         :root {
             --bg: #eef2f6;
@@ -59,7 +60,11 @@
         .header {
             padding: 18px 20px 14px;
             border-bottom: 1px solid var(--line);
-            background: linear-gradient(90deg, rgba(15, 118, 110, 0.08), rgba(21, 94, 117, 0.04));
+            background: linear-gradient(
+                90deg,
+                rgba(15, 118, 110, 0.08),
+                rgba(21, 94, 117, 0.04)
+            );
         }
 
         h1 {
@@ -187,12 +192,29 @@
             opacity: 0.5;
         }
 
-        .btn-build { background: var(--brand); }
-        .btn-add { background: var(--brand-2); }
-        .btn-start { background: #2563eb; }
-        .btn-pause { background: #7c3aed; }
-        .btn-stop { background: var(--danger); }
-        .btn-copy { background: #475569; }
+        .btn-build {
+            background: var(--brand);
+        }
+
+        .btn-add {
+            background: var(--brand-2);
+        }
+
+        .btn-start {
+            background: #2563eb;
+        }
+
+        .btn-pause {
+            background: #7c3aed;
+        }
+
+        .btn-stop {
+            background: var(--danger);
+        }
+
+        .btn-copy {
+            background: #475569;
+        }
 
         .stats {
             display: grid;
@@ -260,9 +282,17 @@
             background: var(--pending);
         }
 
-        .status-active .bar { background: var(--active); }
-        .status-done .bar { background: var(--done); }
-        .status-error .bar { background: var(--danger); }
+        .status-active .bar {
+            background: var(--active);
+        }
+
+        .status-done .bar {
+            background: var(--done);
+        }
+
+        .status-error .bar {
+            background: var(--danger);
+        }
 
         .task-main {
             min-width: 0;
@@ -275,6 +305,7 @@
             margin-bottom: 5px;
             color: var(--muted);
             font-size: 12px;
+            flex-wrap: wrap;
         }
 
         .pill {
@@ -307,6 +338,7 @@
             border-radius: 8px;
             background: #e2e8f0;
             color: #334155;
+            white-space: nowrap;
         }
 
         .mini-danger {
@@ -345,6 +377,121 @@
             line-height: 1.45;
         }
 
+        /* =========================
+           自定义居中弹窗
+           ========================= */
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.48);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            opacity: 0;
+            visibility: hidden;
+            transition:
+                opacity 0.16s ease,
+                visibility 0.16s ease;
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-box {
+            width: min(420px, calc(100vw - 40px));
+            background: #fff;
+            border: 1px solid rgba(203, 213, 225, 0.9);
+            border-radius: 18px;
+            box-shadow: 0 24px 70px rgba(15, 23, 42, 0.28);
+            overflow: hidden;
+            transform: scale(0.96) translateY(6px);
+            transition: transform 0.16s ease;
+        }
+
+        .modal-overlay.show .modal-box {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-content {
+            padding: 24px 24px 20px;
+            text-align: center;
+        }
+
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 14px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-size: 22px;
+            font-weight: 900;
+        }
+
+        .modal-icon.warning {
+            background: #ffedd5;
+            color: #c2410c;
+        }
+
+        .modal-icon.danger {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .modal-title {
+            margin: 0 0 8px;
+            color: #0f172a;
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .modal-message {
+            margin: 0;
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.65;
+            white-space: pre-line;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 0 24px 24px;
+        }
+
+        .modal-btn {
+            min-width: 100px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .modal-cancel {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .modal-confirm {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        .modal-confirm.danger {
+            background: #c2410c;
+        }
+
         @media (max-width: 980px) {
             body {
                 overflow: auto;
@@ -367,74 +514,224 @@
         }
     </style>
 </head>
+
 <body>
+
     <main class="app">
+
         <section class="panel left-panel">
+
             <div class="header">
                 <h1 id="appTitle">TranslatePress Warmup Runner</h1>
-                <p class="sub">粘贴英文原文 URL，自动生成指定语言预设的 <code>?tp_warm=1</code> 队列。进度自动保存在本地。</p>
+                <p class="sub">
+                    粘贴英文原文 URL，自动生成指定语言预设的
+                    <code>?tp_warm=1</code>
+                    队列。进度自动保存在本地。
+                </p>
             </div>
 
             <div class="toolbar">
+
                 <label>目标语言预设</label>
+
                 <div class="preset-group">
-                    <button class="preset-btn active" id="btnViox">VIOX (25国)</button>
-                    <button class="preset-btn" id="btnKuangya">Kuangya (9国)</button>
+                    <button class="preset-btn active" id="btnViox">
+                        VIOX (25国)
+                    </button>
+
+                    <button class="preset-btn" id="btnKuangya">
+                        Kuangya (9国)
+                    </button>
                 </div>
 
                 <div class="settings-grid">
+
                     <div>
                         <label for="rounds">每个语言轮数</label>
-                        <input id="rounds" type="number" min="1" max="5" value="2">
+                        <input
+                            id="rounds"
+                            type="number"
+                            min="1"
+                            max="5"
+                            value="2"
+                        >
                     </div>
+
                     <div>
                         <label for="waitSeconds">每次等待秒数</label>
-                        <input id="waitSeconds" type="number" min="20" max="900" value="120">
+                        <input
+                            id="waitSeconds"
+                            type="number"
+                            min="5"
+                            max="900"
+                            value="120"
+                        >
                     </div>
+
                     <div>
                         <label for="betweenLangSeconds">换语言缓冲</label>
-                        <input id="betweenLangSeconds" type="number" min="0" max="600" value="30">
+                        <input
+                            id="betweenLangSeconds"
+                            type="number"
+                            min="0"
+                            max="600"
+                            value="30"
+                        >
                     </div>
+
                     <div>
                         <label for="siteHost">强制域名(可空)</label>
-                        <input id="siteHost" type="text" placeholder="如 https://viox.com">
+                        <input
+                            id="siteHost"
+                            type="text"
+                            placeholder="如 https://viox.com"
+                        >
                     </div>
+
                 </div>
 
-                <label for="baseUrl">英文原文 URL，每行一个</label>
-                <textarea id="baseUrl" placeholder="例如：https://viox.com/some-post/"></textarea>
+                <label for="baseUrl">
+                    英文原文 URL，每行一个
+                </label>
+
+                <textarea
+                    id="baseUrl"
+                    placeholder="例如：https://viox.com/some-post/"
+                ></textarea>
 
                 <div class="buttons">
-                    <button class="btn-build" id="buildBtn">生成新队列</button>
-                    <button class="btn-add" id="appendBtn">追加队列</button>
-                    <button class="btn-start" id="startBtn">开始/继续</button>
-                    <button class="btn-pause" id="pauseBtn">暂停</button>
-                    <button class="btn-stop" id="resetBtn">重置</button>
-                    <button class="btn-copy" id="copyBtn">复制 URLs</button>
+
+                    <button class="btn-build" id="buildBtn">
+                        生成新队列
+                    </button>
+
+                    <button class="btn-add" id="appendBtn">
+                        追加队列
+                    </button>
+
+                    <button class="btn-start" id="startBtn">
+                        开始/继续
+                    </button>
+
+                    <button class="btn-pause" id="pauseBtn">
+                        暂停
+                    </button>
+
+                    <button class="btn-stop" id="resetBtn">
+                        重置
+                    </button>
+
+                    <button class="btn-copy" id="copyBtn">
+                        复制 URLs
+                    </button>
+
                 </div>
 
-                <p class="notice">注意：切换预设只会影响新生成的队列，不会影响下方已经存在任务列表中的记录。</p>
+                <p class="notice">
+                    注意：切换预设只会影响新生成的队列，不会影响下方已经存在任务列表中的记录。
+                </p>
+
             </div>
 
             <div class="stats">
-                <div class="stat"><span>总任务</span><strong id="statTotal">0</strong></div>
-                <div class="stat"><span>已完成</span><strong id="statDone">0</strong></div>
-                <div class="stat"><span>当前位置</span><strong id="statIndex">0</strong></div>
-                <div class="stat"><span>预计剩余</span><strong id="statEta">0m</strong></div>
+
+                <div class="stat">
+                    <span>总任务</span>
+                    <strong id="statTotal">0</strong>
+                </div>
+
+                <div class="stat">
+                    <span>已完成</span>
+                    <strong id="statDone">0</strong>
+                </div>
+
+                <div class="stat">
+                    <span>当前位置</span>
+                    <strong id="statIndex">0</strong>
+                </div>
+
+                <div class="stat">
+                    <span>预计剩余</span>
+                    <strong id="statEta">0m</strong>
+                </div>
+
             </div>
 
             <ul class="task-list" id="taskList">
-                <li class="empty">请先输入英文 URL 生成队列。</li>
+                <li class="empty">
+                    请先输入英文 URL 生成队列。
+                </li>
             </ul>
+
         </section>
 
         <section class="panel right-panel">
-            <div class="screen-header" id="statusText">系统待机。等待生成队列。</div>
-            <iframe class="runner-frame" id="workFrame" src="about:blank" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+            <div class="screen-header" id="statusText">
+                系统待机。等待生成队列。
+            </div>
+
+            <iframe
+                class="runner-frame"
+                id="workFrame"
+                src="about:blank"
+                referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
+
         </section>
+
     </main>
 
+
+    <!-- 自定义居中弹窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+
+        <div
+            class="modal-box"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modalTitle"
+        >
+
+            <div class="modal-content">
+
+                <div class="modal-icon" id="modalIcon">
+                    !
+                </div>
+
+                <h2 class="modal-title" id="modalTitle">
+                    提示
+                </h2>
+
+                <p class="modal-message" id="modalMessage"></p>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    class="modal-btn modal-cancel"
+                    id="modalCancelBtn"
+                >
+                    取消
+                </button>
+
+                <button
+                    class="modal-btn modal-confirm"
+                    id="modalConfirmBtn"
+                >
+                    确定
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
     <script>
+
         const VIOX_LANGUAGES = [
             { code: 'es_ES', slug: 'es', name: '西班牙语' },
             { code: 'pt_PT', slug: 'pt', name: '葡萄牙语' },
@@ -463,6 +760,7 @@
             { code: 'bn_BD', slug: 'bn', name: '孟加拉语' }
         ];
 
+
         const KUANGYA_LANGUAGES = [
             { code: 'fr_FR', slug: 'fr', name: '法语' },
             { code: 'pt_BR', slug: 'pt', name: '葡萄牙语(巴西)' },
@@ -475,456 +773,1775 @@
             { code: 'ar', slug: 'ar', name: '阿拉伯语' }
         ];
 
+
         const STORAGE_KEY = 'vioxTpWarmupRunner:v4';
-        
-        // 动态合并所有可能的 slug 用于路径清理验证
-        const ALL_SLUGS = ['cn', 'en', ...new Set([...VIOX_LANGUAGES, ...KUANGYA_LANGUAGES].map(item => item.slug))];
+
+
+        const ALL_SLUGS = [
+            'cn',
+            'en',
+            ...new Set(
+                [
+                    ...VIOX_LANGUAGES,
+                    ...KUANGYA_LANGUAGES
+                ].map(item => item.slug)
+            )
+        ];
+
 
         let currentPreset = 'viox';
         let currentLanguages = VIOX_LANGUAGES;
-        
+
         let taskQueue = [];
         let currentIndex = 0;
         let isRunning = false;
+
         let timerId = null;
         let countdownId = null;
 
+
         const els = {
-            appTitle: document.getElementById('appTitle'),
-            btnViox: document.getElementById('btnViox'),
-            btnKuangya: document.getElementById('btnKuangya'),
-            rounds: document.getElementById('rounds'),
-            waitSeconds: document.getElementById('waitSeconds'),
-            betweenLangSeconds: document.getElementById('betweenLangSeconds'),
-            siteHost: document.getElementById('siteHost'),
-            baseUrl: document.getElementById('baseUrl'),
-            buildBtn: document.getElementById('buildBtn'),
-            appendBtn: document.getElementById('appendBtn'),
-            startBtn: document.getElementById('startBtn'),
-            pauseBtn: document.getElementById('pauseBtn'),
-            resetBtn: document.getElementById('resetBtn'),
-            copyBtn: document.getElementById('copyBtn'),
-            taskList: document.getElementById('taskList'),
-            statusText: document.getElementById('statusText'),
-            workFrame: document.getElementById('workFrame'),
-            statTotal: document.getElementById('statTotal'),
-            statDone: document.getElementById('statDone'),
-            statIndex: document.getElementById('statIndex'),
-            statEta: document.getElementById('statEta')
+
+            appTitle:
+                document.getElementById('appTitle'),
+
+            btnViox:
+                document.getElementById('btnViox'),
+
+            btnKuangya:
+                document.getElementById('btnKuangya'),
+
+            rounds:
+                document.getElementById('rounds'),
+
+            waitSeconds:
+                document.getElementById('waitSeconds'),
+
+            betweenLangSeconds:
+                document.getElementById('betweenLangSeconds'),
+
+            siteHost:
+                document.getElementById('siteHost'),
+
+            baseUrl:
+                document.getElementById('baseUrl'),
+
+            buildBtn:
+                document.getElementById('buildBtn'),
+
+            appendBtn:
+                document.getElementById('appendBtn'),
+
+            startBtn:
+                document.getElementById('startBtn'),
+
+            pauseBtn:
+                document.getElementById('pauseBtn'),
+
+            resetBtn:
+                document.getElementById('resetBtn'),
+
+            copyBtn:
+                document.getElementById('copyBtn'),
+
+            taskList:
+                document.getElementById('taskList'),
+
+            statusText:
+                document.getElementById('statusText'),
+
+            workFrame:
+                document.getElementById('workFrame'),
+
+            statTotal:
+                document.getElementById('statTotal'),
+
+            statDone:
+                document.getElementById('statDone'),
+
+            statIndex:
+                document.getElementById('statIndex'),
+
+            statEta:
+                document.getElementById('statEta'),
+
+            modalOverlay:
+                document.getElementById('modalOverlay'),
+
+            modalIcon:
+                document.getElementById('modalIcon'),
+
+            modalTitle:
+                document.getElementById('modalTitle'),
+
+            modalMessage:
+                document.getElementById('modalMessage'),
+
+            modalCancelBtn:
+                document.getElementById('modalCancelBtn'),
+
+            modalConfirmBtn:
+                document.getElementById('modalConfirmBtn')
         };
 
-        // 预设切换逻辑
-        function setPreset(presetName) {
-            currentPreset = presetName;
-            if (presetName === 'viox') {
-                currentLanguages = VIOX_LANGUAGES;
-                els.btnViox.classList.add('active');
-                els.btnKuangya.classList.remove('active');
-                els.appTitle.textContent = 'VIOX TP Warmup Runner';
-            } else {
-                currentLanguages = KUANGYA_LANGUAGES;
-                els.btnKuangya.classList.add('active');
-                els.btnViox.classList.remove('active');
-                els.appTitle.textContent = 'Kuangya TP Warmup Runner';
-            }
-            saveState();
+
+        /* =========================
+           自定义 Modal
+           ========================= */
+
+        let modalResolver = null;
+
+
+        function closeModal(result) {
+
+            els.modalOverlay.classList.remove('show');
+
+            const resolver = modalResolver;
+
+            modalResolver = null;
+
+            window.setTimeout(() => {
+
+                if (resolver) {
+                    resolver(result);
+                }
+
+            }, 100);
+
         }
 
-        els.btnViox.addEventListener('click', () => setPreset('viox'));
-        els.btnKuangya.addEventListener('click', () => setPreset('kuangya'));
 
-        window.addEventListener('beforeunload', event => {
-            if (!isRunning) return;
-            event.preventDefault();
-            event.returnValue = 'Warmup 队列正在运行，关闭浏览器会停止任务。';
-        });
+        function showModal({
+            title = '提示',
+            message = '',
+            confirmText = '确定',
+            cancelText = '取消',
+            showCancel = false,
+            type = 'info'
+        }) {
 
-        els.buildBtn.addEventListener('click', () => buildQueue(false));
-        els.appendBtn.addEventListener('click', () => buildQueue(true));
-        els.startBtn.addEventListener('click', startRunner);
-        els.pauseBtn.addEventListener('click', pauseRunner);
-        els.resetBtn.addEventListener('click', resetRunner);
-        els.copyBtn.addEventListener('click', copyUrls);
+            return new Promise(resolve => {
+
+                modalResolver = resolve;
+
+                els.modalTitle.textContent = title;
+                els.modalMessage.textContent = message;
+
+                els.modalConfirmBtn.textContent = confirmText;
+                els.modalCancelBtn.textContent = cancelText;
+
+                els.modalCancelBtn.style.display =
+                    showCancel ? '' : 'none';
+
+
+                els.modalIcon.className = 'modal-icon';
+
+                els.modalConfirmBtn.className =
+                    'modal-btn modal-confirm';
+
+
+                if (type === 'danger') {
+
+                    els.modalIcon.textContent = '!';
+                    els.modalIcon.classList.add('danger');
+
+                    els.modalConfirmBtn.classList.add('danger');
+
+                } else if (type === 'warning') {
+
+                    els.modalIcon.textContent = '!';
+                    els.modalIcon.classList.add('warning');
+
+                } else {
+
+                    els.modalIcon.textContent = '✓';
+
+                }
+
+
+                els.modalOverlay.classList.add('show');
+
+
+                window.setTimeout(() => {
+
+                    els.modalConfirmBtn.focus();
+
+                }, 50);
+
+            });
+
+        }
+
+
+        function customAlert(
+            message,
+            title = '提示',
+            type = 'info'
+        ) {
+
+            return showModal({
+                title,
+                message,
+                showCancel: false,
+                type
+            });
+
+        }
+
+
+        function customConfirm(
+            message,
+            title = '请确认',
+            type = 'warning'
+        ) {
+
+            return showModal({
+                title,
+                message,
+                showCancel: true,
+                type
+            });
+
+        }
+
+
+        els.modalConfirmBtn.addEventListener(
+            'click',
+            () => closeModal(true)
+        );
+
+
+        els.modalCancelBtn.addEventListener(
+            'click',
+            () => closeModal(false)
+        );
+
+
+        els.modalOverlay.addEventListener(
+            'click',
+            event => {
+
+                if (event.target === els.modalOverlay) {
+
+                    const cancelVisible =
+                        els.modalCancelBtn.style.display !== 'none';
+
+                    if (cancelVisible) {
+                        closeModal(false);
+                    }
+
+                }
+
+            }
+        );
+
+
+        document.addEventListener(
+            'keydown',
+            event => {
+
+                if (
+                    !els.modalOverlay.classList.contains('show')
+                ) {
+                    return;
+                }
+
+
+                if (event.key === 'Escape') {
+
+                    const cancelVisible =
+                        els.modalCancelBtn.style.display !== 'none';
+
+                    if (cancelVisible) {
+                        closeModal(false);
+                    }
+
+                }
+
+
+                if (event.key === 'Enter') {
+
+                    closeModal(true);
+
+                }
+
+            }
+        );
+
+
+        /* =========================
+           预设切换
+           ========================= */
+
+        function setPreset(presetName) {
+
+            currentPreset = presetName;
+
+
+            if (presetName === 'viox') {
+
+                currentLanguages = VIOX_LANGUAGES;
+
+                els.btnViox.classList.add('active');
+                els.btnKuangya.classList.remove('active');
+
+                els.appTitle.textContent =
+                    'VIOX TP Warmup Runner';
+
+            } else {
+
+                currentLanguages = KUANGYA_LANGUAGES;
+
+                els.btnKuangya.classList.add('active');
+                els.btnViox.classList.remove('active');
+
+                els.appTitle.textContent =
+                    'Kuangya TP Warmup Runner';
+            }
+
+
+            saveState();
+
+        }
+
+
+        els.btnViox.addEventListener(
+            'click',
+            () => setPreset('viox')
+        );
+
+
+        els.btnKuangya.addEventListener(
+            'click',
+            () => setPreset('kuangya')
+        );
+
+
+        window.addEventListener(
+            'beforeunload',
+            event => {
+
+                if (!isRunning) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                event.returnValue =
+                    'Warmup 队列正在运行，关闭浏览器会停止任务。';
+
+            }
+        );
+
+
+        els.buildBtn.addEventListener(
+            'click',
+            () => buildQueue(false)
+        );
+
+
+        els.appendBtn.addEventListener(
+            'click',
+            () => buildQueue(true)
+        );
+
+
+        els.startBtn.addEventListener(
+            'click',
+            startRunner
+        );
+
+
+        els.pauseBtn.addEventListener(
+            'click',
+            pauseRunner
+        );
+
+
+        els.resetBtn.addEventListener(
+            'click',
+            resetRunner
+        );
+
+
+        els.copyBtn.addEventListener(
+            'click',
+            copyUrls
+        );
+
 
         loadState();
         renderAll();
 
+
+        /* =========================
+           设置
+           ========================= */
+
         function readSettings() {
+
             return {
-                rounds: clampNumber(els.rounds.value, 1, 5, 2),
-                waitSeconds: clampNumber(els.waitSeconds.value, 20, 900, 120),
-                betweenLangSeconds: clampNumber(els.betweenLangSeconds.value, 0, 600, 30)
+
+                rounds:
+                    clampNumber(
+                        els.rounds.value,
+                        1,
+                        5,
+                        2
+                    ),
+
+                waitSeconds:
+                    clampNumber(
+                        els.waitSeconds.value,
+                        5,
+                        900,
+                        120
+                    ),
+
+                betweenLangSeconds:
+                    clampNumber(
+                        els.betweenLangSeconds.value,
+                        0,
+                        600,
+                        30
+                    )
+
             };
+
         }
 
-        function clampNumber(value, min, max, fallback) {
-            const parsed = parseInt(value, 10);
-            if (Number.isNaN(parsed)) return fallback;
-            return Math.max(min, Math.min(max, parsed));
+
+        function clampNumber(
+            value,
+            min,
+            max,
+            fallback
+        ) {
+
+            const parsed =
+                parseInt(value, 10);
+
+
+            if (Number.isNaN(parsed)) {
+                return fallback;
+            }
+
+
+            return Math.max(
+                min,
+                Math.min(max, parsed)
+            );
+
         }
 
-        function buildQueue(append) {
-            const lines = els.baseUrl.value.split('\n').map(line => line.trim()).filter(Boolean);
+
+        /* =========================
+           生成队列
+           ========================= */
+
+        async function buildQueue(append) {
+
+            const lines =
+                els.baseUrl.value
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(Boolean);
+
+
             if (!lines.length) {
-                alert('请先输入英文 URL。');
+
+                await customAlert(
+                    '请先输入英文 URL。',
+                    '没有输入 URL',
+                    'warning'
+                );
+
                 return;
             }
+
 
             if (!append) {
+
                 pauseRunner();
+
                 taskQueue = [];
                 currentIndex = 0;
-                els.workFrame.src = 'about:blank';
+
+                els.workFrame.src =
+                    'about:blank';
+
             }
 
-            const settings = readSettings();
+
+            const settings =
+                readSettings();
+
+
             const newTasks = [];
 
-            for (const line of lines) {
-                const cleaned = normalizeSourceUrl(line);
-                if (!cleaned) continue;
 
-                for (const lang of currentLanguages) {
-                    for (let round = 1; round <= settings.rounds; round++) {
-                        newTasks.push(makeTask(cleaned, lang, round, settings.rounds));
-                    }
+            for (const line of lines) {
+
+                const cleaned =
+                    normalizeSourceUrl(line);
+
+
+                if (!cleaned) {
+                    continue;
                 }
+
+
+                for (
+                    const lang
+                    of currentLanguages
+                ) {
+
+                    for (
+                        let round = 1;
+                        round <= settings.rounds;
+                        round++
+                    ) {
+
+                        newTasks.push(
+                            makeTask(
+                                cleaned,
+                                lang,
+                                round,
+                                settings.rounds
+                            )
+                        );
+
+                    }
+
+                }
+
             }
+
 
             if (!newTasks.length) {
-                alert('没有生成有效任务，请检查 URL。');
+
+                await customAlert(
+                    '没有生成有效任务，请检查 URL。',
+                    'URL 无效',
+                    'warning'
+                );
+
                 return;
             }
+
 
             taskQueue.push(...newTasks);
+
             els.baseUrl.value = '';
+
             saveState();
             renderAll();
-            setStatus(`已${append ? '追加' : '生成'} ${newTasks.length} 个任务。总任务 ${taskQueue.length} 个。`);
+
+
+            setStatus(
+                `已${append ? '追加' : '生成'} ` +
+                `${newTasks.length} 个任务。` +
+                `总任务 ${taskQueue.length} 个。`
+            );
+
         }
+
 
         function normalizeSourceUrl(raw) {
-            let text = raw.trim();
-            if (!text) return null;
-            if (!/^https?:\/\//i.test(text)) text = 'https://' + text;
 
-            try {
-                const url = new URL(text);
-                const forcedHost = normalizeHost(els.siteHost.value.trim());
-                const origin = forcedHost || url.origin;
-                const cleanPath = stripKnownLanguagePrefix(url.pathname || '/');
-                return {
-                    origin,
-                    path: cleanPath,
-                    search: url.search
-                };
-            } catch (error) {
-                console.warn('Invalid URL:', raw, error);
+            let text = raw.trim();
+
+
+            if (!text) {
                 return null;
             }
+
+
+            if (!/^https?:\/\//i.test(text)) {
+
+                text =
+                    'https://' + text;
+
+            }
+
+
+            try {
+
+                const url =
+                    new URL(text);
+
+
+                const forcedHost =
+                    normalizeHost(
+                        els.siteHost.value.trim()
+                    );
+
+
+                const origin =
+                    forcedHost || url.origin;
+
+
+                const cleanPath =
+                    stripKnownLanguagePrefix(
+                        url.pathname || '/'
+                    );
+
+
+                return {
+
+                    origin,
+
+                    path: cleanPath,
+
+                    search: url.search
+
+                };
+
+            } catch (error) {
+
+                console.warn(
+                    'Invalid URL:',
+                    raw,
+                    error
+                );
+
+                return null;
+
+            }
+
         }
+
 
         function normalizeHost(host) {
-            if (!host) return '';
-            const text = /^https?:\/\//i.test(host) ? host : 'https://' + host;
-            try {
-                return new URL(text).origin;
-            } catch (error) {
+
+            if (!host) {
                 return '';
             }
-        }
 
-        function stripKnownLanguagePrefix(pathname) {
-            const parts = pathname.split('/').filter(Boolean);
-            if (parts.length && ALL_SLUGS.includes(parts[0].toLowerCase())) {
-                parts.shift();
+
+            const text =
+                /^https?:\/\//i.test(host)
+                    ? host
+                    : 'https://' + host;
+
+
+            try {
+
+                return new URL(text).origin;
+
+            } catch (error) {
+
+                return '';
+
             }
-            const clean = '/' + parts.join('/');
-            return pathname.endsWith('/') ? clean.replace(/\/?$/, '/') : clean;
+
         }
 
-        function makeTask(source, lang, round, rounds) {
-            const path = '/' + lang.slug + source.path;
-            const url = new URL(path.replace(/\/{2,}/g, '/'), source.origin);
+
+        function stripKnownLanguagePrefix(
+            pathname
+        ) {
+
+            const parts =
+                pathname
+                    .split('/')
+                    .filter(Boolean);
+
+
+            if (
+                parts.length &&
+                ALL_SLUGS.includes(
+                    parts[0].toLowerCase()
+                )
+            ) {
+
+                parts.shift();
+
+            }
+
+
+            const clean =
+                '/' + parts.join('/');
+
+
+            return pathname.endsWith('/')
+                ? clean.replace(/\/?$/, '/')
+                : clean;
+
+        }
+
+
+        function makeTask(
+            source,
+            lang,
+            round,
+            rounds
+        ) {
+
+            const path =
+                '/' +
+                lang.slug +
+                source.path;
+
+
+            const url =
+                new URL(
+                    path.replace(/\/{2,}/g, '/'),
+                    source.origin
+                );
+
 
             if (source.search) {
-                const params = new URLSearchParams(source.search);
-                params.forEach((value, key) => url.searchParams.set(key, value));
+
+                const params =
+                    new URLSearchParams(
+                        source.search
+                    );
+
+
+                params.forEach(
+                    (value, key) => {
+
+                        url.searchParams.set(
+                            key,
+                            value
+                        );
+
+                    }
+                );
+
             }
 
-            url.searchParams.set('tp_warm', '1');
-            url.searchParams.set('viox_warm_lang', lang.slug);
-            url.searchParams.set('viox_warm_round', String(round));
-            url.searchParams.set('nocache', Date.now().toString() + '-' + Math.random().toString(36).slice(2, 8));
+
+            url.searchParams.set(
+                'tp_warm',
+                '1'
+            );
+
+
+            url.searchParams.set(
+                'viox_warm_lang',
+                lang.slug
+            );
+
+
+            url.searchParams.set(
+                'viox_warm_round',
+                String(round)
+            );
+
+
+            url.searchParams.set(
+                'nocache',
+                Date.now().toString() +
+                '-' +
+                Math.random()
+                    .toString(36)
+                    .slice(2, 8)
+            );
+
 
             return {
+
                 url: url.toString(),
+
                 langSlug: lang.slug,
+
                 langCode: lang.code,
+
                 langName: lang.name,
+
                 round,
+
                 rounds,
+
                 status: 'pending'
+
             };
+
         }
 
-        function startRunner() {
+
+        /* =========================
+           Runner
+           ========================= */
+
+        async function startRunner() {
+
             if (!taskQueue.length) {
-                alert('请先生成队列。');
+
+                await customAlert(
+                    '请先生成队列。',
+                    '没有任务',
+                    'warning'
+                );
+
                 return;
+
             }
 
-            if (currentIndex >= taskQueue.length) {
+
+            if (
+                currentIndex >=
+                taskQueue.length
+            ) {
+
                 currentIndex = 0;
-                taskQueue.forEach(task => task.status = 'pending');
+
+
+                taskQueue.forEach(
+                    task => {
+                        task.status = 'pending';
+                    }
+                );
+
+
                 renderAll();
+
             }
+
 
             isRunning = true;
+
             runCurrent();
+
         }
+
 
         function pauseRunner() {
+
             isRunning = false;
+
             clearTimers();
+
             saveState();
-            setStatus(`已暂停。当前位置 ${Math.min(currentIndex + 1, taskQueue.length)} / ${taskQueue.length}。`);
+
+
+            setStatus(
+                `已暂停。当前位置 ` +
+                `${Math.min(
+                    currentIndex + 1,
+                    taskQueue.length
+                )} / ${taskQueue.length}。`
+            );
+
         }
 
-        function resetRunner() {
-            if (taskQueue.length && !confirm('确定重置整个队列和进度吗？')) return;
+
+        async function resetRunner() {
+
+            if (taskQueue.length) {
+
+                const confirmed =
+                    await customConfirm(
+                        '确定重置整个队列和进度吗？\n重置后当前任务列表会全部清空。',
+                        '重置队列',
+                        'danger'
+                    );
+
+
+                if (!confirmed) {
+                    return;
+                }
+
+            }
+
+
             pauseRunner();
+
             taskQueue = [];
             currentIndex = 0;
-            els.workFrame.src = 'about:blank';
+
+            els.workFrame.src =
+                'about:blank';
+
             saveState();
+
             renderAll();
+
             setStatus('已重置。');
+
         }
+
 
         function runCurrent() {
+
             clearTimers();
 
-            if (!isRunning) return;
-            if (currentIndex >= taskQueue.length) {
-                isRunning = false;
-                saveState();
-                renderAll();
-                setStatus('全部任务完成。建议再抽查几个语言页面确认没有漏翻。');
+
+            if (!isRunning) {
                 return;
             }
 
-            const settings = readSettings();
-            const task = taskQueue[currentIndex];
-            task.status = 'active';
+
+            if (
+                currentIndex >=
+                taskQueue.length
+            ) {
+
+                isRunning = false;
+
+                saveState();
+
+                renderAll();
+
+
+                setStatus(
+                    '全部任务完成。建议再抽查几个语言页面确认没有漏翻。'
+                );
+
+                return;
+
+            }
+
+
+            const settings =
+                readSettings();
+
+
+            const task =
+                taskQueue[currentIndex];
+
+
+            task.status =
+                'active';
+
+
             saveState();
+
             renderAll();
 
-            els.workFrame.src = task.url;
-            const waitSeconds = settings.waitSeconds + shouldAddLanguageGap(currentIndex) * settings.betweenLangSeconds;
-            let remaining = waitSeconds;
 
-            updateRunningStatus(task, remaining);
-            countdownId = window.setInterval(() => {
-                remaining -= 1;
-                updateRunningStatus(task, remaining);
-                if (remaining <= 0) clearInterval(countdownId);
-            }, 1000);
+            els.workFrame.src =
+                task.url;
 
-            timerId = window.setTimeout(() => {
-                finishCurrent();
-            }, waitSeconds * 1000);
+
+            const waitSeconds =
+                settings.waitSeconds +
+                shouldAddLanguageGap(
+                    currentIndex
+                ) *
+                settings.betweenLangSeconds;
+
+
+            let remaining =
+                waitSeconds;
+
+
+            updateRunningStatus(
+                task,
+                remaining
+            );
+
+
+            countdownId =
+                window.setInterval(
+                    () => {
+
+                        remaining -= 1;
+
+                        updateRunningStatus(
+                            task,
+                            remaining
+                        );
+
+
+                        if (
+                            remaining <= 0
+                        ) {
+
+                            clearInterval(
+                                countdownId
+                            );
+
+                        }
+
+                    },
+                    1000
+                );
+
+
+            timerId =
+                window.setTimeout(
+                    () => {
+
+                        finishCurrent();
+
+                    },
+                    waitSeconds * 1000
+                );
+
         }
 
-        function shouldAddLanguageGap(index) {
-            const current = taskQueue[index];
-            const next = taskQueue[index + 1];
-            return current && next && current.langSlug !== next.langSlug ? 1 : 0;
+
+        function shouldAddLanguageGap(
+            index
+        ) {
+
+            const current =
+                taskQueue[index];
+
+
+            const next =
+                taskQueue[index + 1];
+
+
+            return (
+                current &&
+                next &&
+                current.langSlug !==
+                    next.langSlug
+            )
+                ? 1
+                : 0;
+
         }
+
 
         function finishCurrent() {
-            if (!taskQueue[currentIndex]) return;
-            taskQueue[currentIndex].status = 'done';
+
+            if (
+                !taskQueue[currentIndex]
+            ) {
+                return;
+            }
+
+
+            taskQueue[currentIndex].status =
+                'done';
+
+
             currentIndex += 1;
+
+
             saveState();
+
+
             runCurrent();
+
         }
 
-        function startFrom(index) {
-            if (isRunning && !confirm('当前正在运行，确定跳到这个任务开始吗？')) return;
-            pauseRunner();
-            currentIndex = index;
-            taskQueue.forEach((task, taskIndex) => {
-                task.status = taskIndex < index ? 'done' : 'pending';
-            });
-            saveState();
-            renderAll();
-            startRunner();
-        }
 
-        function removeTask(index) {
+        async function startFrom(index) {
+
             if (isRunning) {
-                alert('运行中先暂停，再删除任务。');
-                return;
+
+                const confirmed =
+                    await customConfirm(
+                        `当前队列正在运行。\n确定跳到第 ${index + 1} 个任务开始吗？`,
+                        '从这里开始',
+                        'warning'
+                    );
+
+
+                if (!confirmed) {
+                    return;
+                }
+
             }
-            taskQueue.splice(index, 1);
-            if (currentIndex > index) currentIndex -= 1;
-            if (currentIndex > taskQueue.length) currentIndex = taskQueue.length;
+
+
+            isRunning = false;
+
+            clearTimers();
+
+
+            currentIndex =
+                index;
+
+
+            taskQueue.forEach(
+                (task, taskIndex) => {
+
+                    task.status =
+                        taskIndex < index
+                            ? 'done'
+                            : 'pending';
+
+                }
+            );
+
+
             saveState();
+
             renderAll();
+
+
+            isRunning = true;
+
+            runCurrent();
+
         }
 
-        function copyUrls() {
-            if (!taskQueue.length) {
-                alert('当前没有队列。');
+
+        async function removeTask(index) {
+
+            if (isRunning) {
+
+                await customAlert(
+                    '运行中不能删除任务。\n请先暂停队列，再执行删除。',
+                    '无法删除',
+                    'warning'
+                );
+
+                return;
+
+            }
+
+
+            const task =
+                taskQueue[index];
+
+
+            if (!task) {
                 return;
             }
-            const text = taskQueue.map(task => task.url).join('\n');
-            navigator.clipboard.writeText(text).then(() => {
-                setStatus(`已复制 ${taskQueue.length} 个 URL。`);
-            }).catch(() => {
-                const box = document.createElement('textarea');
-                box.value = text;
-                document.body.appendChild(box);
-                box.select();
-                document.execCommand('copy');
-                box.remove();
-                setStatus(`已复制 ${taskQueue.length} 个 URL。`);
-            });
+
+
+            const confirmed =
+                await customConfirm(
+                    `确定删除第 ${index + 1} 个任务吗？\n${task.langName} / 第 ${task.round}/${task.rounds} 轮`,
+                    '删除任务',
+                    'danger'
+                );
+
+
+            if (!confirmed) {
+                return;
+            }
+
+
+            taskQueue.splice(
+                index,
+                1
+            );
+
+
+            if (
+                currentIndex > index
+            ) {
+
+                currentIndex -= 1;
+
+            }
+
+
+            if (
+                currentIndex >
+                taskQueue.length
+            ) {
+
+                currentIndex =
+                    taskQueue.length;
+
+            }
+
+
+            saveState();
+
+            renderAll();
+
         }
+
+
+        /* =========================
+           复制
+           ========================= */
+
+        async function copyUrls() {
+
+            if (!taskQueue.length) {
+
+                await customAlert(
+                    '当前没有队列。',
+                    '没有可复制的 URL',
+                    'warning'
+                );
+
+                return;
+
+            }
+
+
+            const text =
+                taskQueue
+                    .map(
+                        task => task.url
+                    )
+                    .join('\n');
+
+
+            navigator.clipboard
+                .writeText(text)
+                .then(
+                    () => {
+
+                        setStatus(
+                            `已复制 ${taskQueue.length} 个 URL。`
+                        );
+
+                    }
+                )
+                .catch(
+                    () => {
+
+                        const box =
+                            document.createElement(
+                                'textarea'
+                            );
+
+
+                        box.value =
+                            text;
+
+
+                        document.body.appendChild(
+                            box
+                        );
+
+
+                        box.select();
+
+
+                        document.execCommand(
+                            'copy'
+                        );
+
+
+                        box.remove();
+
+
+                        setStatus(
+                            `已复制 ${taskQueue.length} 个 URL。`
+                        );
+
+                    }
+                );
+
+        }
+
+
+        /* =========================
+           Timer
+           ========================= */
 
         function clearTimers() {
-            if (timerId) clearTimeout(timerId);
-            if (countdownId) clearInterval(countdownId);
+
+            if (timerId) {
+
+                clearTimeout(
+                    timerId
+                );
+
+            }
+
+
+            if (countdownId) {
+
+                clearInterval(
+                    countdownId
+                );
+
+            }
+
+
             timerId = null;
             countdownId = null;
+
         }
 
-        function updateRunningStatus(task, remaining) {
-            const safeRemaining = Math.max(0, remaining);
-            setStatus(`正在跑 ${task.langName} / ${task.langSlug}，第 ${task.round}/${task.rounds} 轮。剩余 ${safeRemaining}s。`);
-            updateStats(safeRemaining);
+
+        function updateRunningStatus(
+            task,
+            remaining
+        ) {
+
+            const safeRemaining =
+                Math.max(
+                    0,
+                    remaining
+                );
+
+
+            setStatus(
+                `正在跑 ${task.langName} / ${task.langSlug}，` +
+                `第 ${task.round}/${task.rounds} 轮。` +
+                `剩余 ${safeRemaining}s。`
+            );
+
+
+            updateStats(
+                safeRemaining
+            );
+
         }
+
 
         function setStatus(text) {
-            els.statusText.textContent = text;
+
+            els.statusText.textContent =
+                text;
+
         }
+
+
+        /* =========================
+           Render
+           ========================= */
 
         function renderAll() {
+
             if (!taskQueue.length) {
-                els.taskList.innerHTML = '<li class="empty">请先输入英文 URL 生成队列。</li>';
+
+                els.taskList.innerHTML =
+                    '<li class="empty">请先输入英文 URL 生成队列。</li>';
+
+
                 updateStats();
+
                 return;
+
             }
 
-            const html = taskQueue.map((task, index) => {
-                const status = index === currentIndex && isRunning ? 'active' : task.status;
-                const statusText = status === 'done' ? '完成' : status === 'active' ? '运行中' : '待命';
-                return `
-                    <li class="task-item status-${status}" id="task-${index}">
-                        <div class="bar"></div>
-                        <div class="task-main">
-                            <div class="task-meta">
-                                <span class="pill">#${index + 1}</span>
-                                <span class="pill">${escapeHtml(task.langSlug)}</span>
-                                <span>${escapeHtml(task.langName)}</span>
-                                <span>第 ${task.round}/${task.rounds} 轮</span>
-                                <span>${statusText}</span>
-                            </div>
-                            <div class="url">${escapeHtml(task.url)}</div>
-                        </div>
-                        <div class="task-actions">
-                            <button class="mini" onclick="startFrom(${index})">从这开始</button>
-                            <button class="mini mini-danger" onclick="removeTask(${index})">删除</button>
-                        </div>
-                    </li>
-                `;
-            }).join('');
 
-            els.taskList.innerHTML = html;
-            const active = document.getElementById(`task-${currentIndex}`);
-            if (active) active.scrollIntoView({ block: 'center' });
+            const html =
+                taskQueue
+                    .map(
+                        (task, index) => {
+
+                            const status =
+                                index === currentIndex &&
+                                isRunning
+                                    ? 'active'
+                                    : task.status;
+
+
+                            const statusText =
+                                status === 'done'
+                                    ? '完成'
+                                    : status === 'active'
+                                        ? '运行中'
+                                        : '待命';
+
+
+                            return `
+                                <li
+                                    class="task-item status-${status}"
+                                    id="task-${index}"
+                                >
+
+                                    <div class="bar"></div>
+
+                                    <div class="task-main">
+
+                                        <div class="task-meta">
+
+                                            <span class="pill">
+                                                #${index + 1}
+                                            </span>
+
+                                            <span class="pill">
+                                                ${escapeHtml(task.langSlug)}
+                                            </span>
+
+                                            <span>
+                                                ${escapeHtml(task.langName)}
+                                            </span>
+
+                                            <span>
+                                                第 ${task.round}/${task.rounds} 轮
+                                            </span>
+
+                                            <span>
+                                                ${statusText}
+                                            </span>
+
+                                        </div>
+
+                                        <div class="url">
+                                            ${escapeHtml(task.url)}
+                                        </div>
+
+                                    </div>
+
+                                    <div class="task-actions">
+
+                                        <button
+                                            class="mini"
+                                            onclick="startFrom(${index})"
+                                        >
+                                            从这开始
+                                        </button>
+
+                                        <button
+                                            class="mini mini-danger"
+                                            onclick="removeTask(${index})"
+                                        >
+                                            删除
+                                        </button>
+
+                                    </div>
+
+                                </li>
+                            `;
+
+                        }
+                    )
+                    .join('');
+
+
+            els.taskList.innerHTML =
+                html;
+
+
+            const active =
+                document.getElementById(
+                    `task-${currentIndex}`
+                );
+
+
+            if (active) {
+
+                active.scrollIntoView({
+                    block: 'center'
+                });
+
+            }
+
+
             updateStats();
+
         }
 
-        function updateStats(currentCountdown) {
-            const done = taskQueue.filter(task => task.status === 'done').length;
-            const settings = readSettings();
-            const remainingTasks = Math.max(0, taskQueue.length - currentIndex);
-            const averageSeconds = settings.waitSeconds + Math.round(settings.betweenLangSeconds / Math.max(1, settings.rounds));
-            const etaSeconds = typeof currentCountdown === 'number'
-                ? currentCountdown + Math.max(0, remainingTasks - 1) * averageSeconds
-                : remainingTasks * averageSeconds;
 
-            els.statTotal.textContent = String(taskQueue.length);
-            els.statDone.textContent = String(done);
-            els.statIndex.textContent = taskQueue.length ? `${Math.min(currentIndex + 1, taskQueue.length)}/${taskQueue.length}` : '0';
-            els.statEta.textContent = formatDuration(etaSeconds);
+        function updateStats(
+            currentCountdown
+        ) {
+
+            const done =
+                taskQueue.filter(
+                    task =>
+                        task.status === 'done'
+                ).length;
+
+
+            const settings =
+                readSettings();
+
+
+            const remainingTasks =
+                Math.max(
+                    0,
+                    taskQueue.length -
+                        currentIndex
+                );
+
+
+            const averageSeconds =
+                settings.waitSeconds +
+                Math.round(
+                    settings.betweenLangSeconds /
+                    Math.max(
+                        1,
+                        settings.rounds
+                    )
+                );
+
+
+            const etaSeconds =
+                typeof currentCountdown ===
+                    'number'
+                    ? currentCountdown +
+                        Math.max(
+                            0,
+                            remainingTasks - 1
+                        ) *
+                        averageSeconds
+                    : remainingTasks *
+                        averageSeconds;
+
+
+            els.statTotal.textContent =
+                String(
+                    taskQueue.length
+                );
+
+
+            els.statDone.textContent =
+                String(done);
+
+
+            els.statIndex.textContent =
+                taskQueue.length
+                    ? `${Math.min(
+                        currentIndex + 1,
+                        taskQueue.length
+                    )}/${taskQueue.length}`
+                    : '0';
+
+
+            els.statEta.textContent =
+                formatDuration(
+                    etaSeconds
+                );
+
         }
 
-        function formatDuration(seconds) {
-            const mins = Math.ceil(seconds / 60);
-            if (mins < 60) return mins + 'm';
-            const hours = Math.floor(mins / 60);
-            const rest = mins % 60;
+
+        function formatDuration(
+            seconds
+        ) {
+
+            if (seconds <= 0) {
+                return '0m';
+            }
+
+
+            const mins =
+                Math.ceil(
+                    seconds / 60
+                );
+
+
+            if (mins < 60) {
+
+                return mins + 'm';
+
+            }
+
+
+            const hours =
+                Math.floor(
+                    mins / 60
+                );
+
+
+            const rest =
+                mins % 60;
+
+
             return `${hours}h ${rest}m`;
+
         }
+
+
+        /* =========================
+           Storage
+           ========================= */
 
         function saveState() {
+
             const state = {
+
                 taskQueue,
+
                 currentIndex,
+
                 currentPreset,
+
                 settings: {
-                    rounds: els.rounds.value,
-                    waitSeconds: els.waitSeconds.value,
-                    betweenLangSeconds: els.betweenLangSeconds.value,
-                    siteHost: els.siteHost.value
+
+                    rounds:
+                        els.rounds.value,
+
+                    waitSeconds:
+                        els.waitSeconds.value,
+
+                    betweenLangSeconds:
+                        els.betweenLangSeconds.value,
+
+                    siteHost:
+                        els.siteHost.value
+
                 }
+
             };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(state)
+            );
+
         }
+
 
         function loadState() {
+
             try {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (!raw) return;
-                const state = JSON.parse(raw);
-                
-                // 恢复预设配置
-                if (state.currentPreset) {
-                    setPreset(state.currentPreset);
+
+                const raw =
+                    localStorage.getItem(
+                        STORAGE_KEY
+                    );
+
+
+                if (!raw) {
+                    return;
                 }
 
-                taskQueue = Array.isArray(state.taskQueue) ? state.taskQueue : [];
-                currentIndex = Number.isInteger(state.currentIndex) ? state.currentIndex : 0;
-                
+
+                const state =
+                    JSON.parse(raw);
+
+
+                if (
+                    state.currentPreset
+                ) {
+
+                    setPreset(
+                        state.currentPreset
+                    );
+
+                }
+
+
+                taskQueue =
+                    Array.isArray(
+                        state.taskQueue
+                    )
+                        ? state.taskQueue
+                        : [];
+
+
+                currentIndex =
+                    Number.isInteger(
+                        state.currentIndex
+                    )
+                        ? state.currentIndex
+                        : 0;
+
+
+                /*
+                 * 浏览器刷新后，上一次 active
+                 * 任务不能继续保持 active，
+                 * 否则界面可能错误显示运行中。
+                 */
+                taskQueue.forEach(
+                    task => {
+
+                        if (
+                            task.status ===
+                            'active'
+                        ) {
+
+                            task.status =
+                                'pending';
+
+                        }
+
+                    }
+                );
+
+
                 if (state.settings) {
-                    els.rounds.value = state.settings.rounds || '2';
-                    els.waitSeconds.value = state.settings.waitSeconds || '120';
-                    els.betweenLangSeconds.value = state.settings.betweenLangSeconds || '30';
-                    els.siteHost.value = state.settings.siteHost || '';
+
+                    els.rounds.value =
+                        state.settings.rounds ||
+                        '2';
+
+
+                    els.waitSeconds.value =
+                        state.settings.waitSeconds ||
+                        '120';
+
+
+                    els.betweenLangSeconds.value =
+                        state.settings.betweenLangSeconds ||
+                        '30';
+
+
+                    els.siteHost.value =
+                        state.settings.siteHost ||
+                        '';
+
                 }
-                
+
+
+                /*
+                 * 兼容旧版本：
+                 * 如果以前保存的是小于 5，
+                 * 自动调整为 5。
+                 */
+                els.waitSeconds.value =
+                    String(
+                        clampNumber(
+                            els.waitSeconds.value,
+                            5,
+                            900,
+                            120
+                        )
+                    );
+
+
                 if (taskQueue.length) {
-                    setStatus(`已恢复上次队列。当前位置 ${Math.min(currentIndex + 1, taskQueue.length)} / ${taskQueue.length}。`);
+
+                    setStatus(
+                        `已恢复上次队列。当前位置 ` +
+                        `${Math.min(
+                            currentIndex + 1,
+                            taskQueue.length
+                        )} / ${taskQueue.length}。`
+                    );
+
                 }
+
             } catch (error) {
-                console.warn('Could not load saved state:', error);
+
+                console.warn(
+                    'Could not load saved state:',
+                    error
+                );
+
             }
+
         }
+
+
+        /* =========================
+           Utils
+           ========================= */
 
         function escapeHtml(value) {
+
             return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
+
+                .replace(
+                    /&/g,
+                    '&amp;'
+                )
+
+                .replace(
+                    /</g,
+                    '&lt;'
+                )
+
+                .replace(
+                    />/g,
+                    '&gt;'
+                )
+
+                .replace(
+                    /"/g,
+                    '&quot;'
+                )
+
+                .replace(
+                    /'/g,
+                    '&#039;'
+                );
+
         }
 
-        window.startFrom = startFrom;
-        window.removeTask = removeTask;
+
+        window.startFrom =
+            startFrom;
+
+
+        window.removeTask =
+            removeTask;
+
     </script>
+
 </body>
 </html>
